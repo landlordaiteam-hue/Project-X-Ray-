@@ -5,11 +5,11 @@ services:
     container_name: capitalxray-postgres
     restart: unless-stopped
     ports:
-      - '5432:5432'
+      - "${POSTGRES_PORT:-5432}:5432"
     environment:
-      POSTGRES_USER: capitalxray
-      POSTGRES_PASSWORD: capitalxray
-      POSTGRES_DB: capitalxray
+      POSTGRES_USER: ${POSTGRES_USER:-capitalxray}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-capitalxray}
+      POSTGRES_DB: ${POSTGRES_DB:-capitalxray}
     volumes:
       - postgres_data:/var/lib/postgresql/data
 

@@ -9,10 +9,12 @@
     "lint": "next lint",
     "test": "vitest run",
     "db:migrate": "tsx scripts/run-migrations.ts",
-    "db:reset": "tsx scripts/run-migrations.ts --reset"
+    "db:reset": "tsx scripts/run-migrations.ts --reset",
+    "db:seed": "tsx scripts/seed-dev.ts"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
+    "dotenv": "^16.4.5",
     "jose": "^5.4.0",
     "next": "14.2.15",
     "pg": "^8.12.0",
