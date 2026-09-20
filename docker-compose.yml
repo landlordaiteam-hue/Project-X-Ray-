@@ -1,0 +1,17 @@
+version: '3.9'
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: capitalxray-postgres
+    restart: unless-stopped
+    ports:
+      - '5432:5432'
+    environment:
+      POSTGRES_USER: capitalxray
+      POSTGRES_PASSWORD: capitalxray
+      POSTGRES_DB: capitalxray
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
