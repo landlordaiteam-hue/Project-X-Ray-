@@ -18,13 +18,6 @@ export async function query<T extends QueryResultRow = QueryResultRow>(text: str
   return getPool().query<T>(text, values);
 }
 
-export async function withTenant<T>(organizationId: string, callback: (client: PoolClient) => Promise<T>) {
-  return withTransaction(async (client) => {
-    await client.query(`SELECT set_config('app.current_organization_id', $1, true)`, [organizationId]);
-    return callback(client);
-  });
-}
-
 export async function withTransaction<T>(callback: (client: PoolClient) => Promise<T>) {
   const client = await getPool().connect();
   try {
@@ -38,4 +31,11 @@ export async function withTransaction<T>(callback: (client: PoolClient) => Promi
   } finally {
     client.release();
   }
+}
+
+export async function withTenant<T>(organizationId: string, callback: (client: PoolClient) => Promise<T>) {
+  return withTransaction(async (client) => {
+    await client.query("SELECT set_config('app.current_organization_id', $1, true)", [organizationId]);
+    return callback(client);
+  });
 }
