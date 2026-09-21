@@ -14,11 +14,11 @@ function getPool() {
   return pool;
 }
 
-export async function query<T extends QueryResultRow = QueryResultRow>(text: string, values: unknown[] = []): Promise<QueryResult<T>> {
+export async function query<T extends QueryResultRow = QueryResultRow>(text: string, values: unknown[] = []) {
   return getPool().query<T>(text, values);
 }
 
-export async function withTransaction<T>(callback: (client: PoolClient) => Promise<T>) {
+export async function withTransaction<T>(callback: (client: PoolClient) => Promise<T>): Promise<T> {
   const client = await getPool().connect();
   try {
     await client.query('BEGIN');
@@ -33,9 +33,13 @@ export async function withTransaction<T>(callback: (client: PoolClient) => Promi
   }
 }
 
-export async function withTenant<T>(organizationId: string, callback: (client: PoolClient) => Promise<T>) {
+export async function withTenant<T>(organizationId: string, callback: (client: PoolClient) => Promise<T>): Promise<T> {
   return withTransaction(async (client) => {
     await client.query("SELECT set_config('app.current_organization_id', $1, true)", [organizationId]);
     return callback(client);
   });
+}
+
+export function resetPoolForTests() {
+  pool = undefined;
 }

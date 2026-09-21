@@ -1,27 +1,12 @@
 import { NextResponse } from 'next/server';
+import { currentUserFromRequest, type AuthUser } from './auth';
 
-export type AuthUser = {
-  sub: string;
-  organizationId: string;
-  permissions: string[];
-  roles: string[];
-};
+export { type AuthUser } from './auth';
 
 export async function currentUser(request: Request | { headers?: Headers }): Promise<AuthUser | null> {
   const headers = request instanceof Request ? request.headers : new Headers(request.headers ?? {});
-  const userId = headers.get('x-user-id');
-  const authHeader = headers.get('authorization');
-
-  if (!userId && !authHeader) {
-    return null;
-  }
-
-  return {
-    sub: userId ?? 'demo-user',
-    organizationId: headers.get('x-organization-id') ?? 'demo-organization',
-    permissions: headers.get('x-permissions')?.split(',').filter(Boolean) ?? ['project.read'],
-    roles: headers.get('x-roles')?.split(',').filter(Boolean) ?? ['project_manager']
-  };
+  const requestObject = new Request('http://localhost', { headers });
+  return currentUserFromRequest(requestObject);
 }
 
 export function unauthorized() {
