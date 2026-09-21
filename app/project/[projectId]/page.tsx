@@ -53,13 +53,13 @@ export default function ProjectPage({ params }: { params: { projectId: string } 
           <h2 className="mt-8 text-xl font-semibold">Project members</h2>
           <div className="mt-4 space-y-3">
             {project.members.map((member) => (
-              <div key={member} className="flex items-center justify-between rounded-lg border border-slate-800 bg-slate-950 p-3">
+              <div key={member.id} className="flex items-center justify-between rounded-lg border border-slate-800 bg-slate-950 p-3">
                 <div>
-                  <p className="font-medium">{member}</p>
-                  <p className="text-sm text-slate-400">Project team member</p>
+                  <p className="font-medium">{member.name}</p>
+                  <p className="text-sm text-slate-400">{member.role.replace('_', ' ')}</p>
                 </div>
                 <span className="rounded-full border border-slate-700 px-2 py-1 text-[10px] uppercase tracking-wide text-blue-300">
-                  Assigned
+                  {member.role}
                 </span>
               </div>
             ))}
