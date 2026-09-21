@@ -1,42 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { z } from 'zod';
 import { currentUser, forbidden, unauthorized } from '@/lib/request-auth';
 import { hasPermission } from '@/lib/rbac';
-import { addProjectMember, getProjectById } from '@/lib/project-data';
+import { getProjectById, removeProjectMember } from '@/lib/project-data';
 
-const memberSchema = z.object({
-  name: z.string().min(2).max(120),
-  role: z.enum(['exec_admin', 'project_manager', 'field_staff'])
-});
-
-export async function GET(request: NextRequest, { params }: { params: { projectId: string } }) {
-  const user = await currentUser(request);
-  if (!user) return unauthorized();
-  if (!hasPermission(user.permissions, 'project.read')) return forbidden();
-
-  const project = await getProjectById(params.projectId);
-  if (!project) {
-    return NextResponse.json({ ok: false, error: { code: 'not_found', message: 'Project not found' } }, { status: 404 });
-  }
-
-  return NextResponse.json({ ok: true, members: project.members });
-}
-
-export async function POST(request: NextRequest, { params }: { params: { projectId: string } }) {
-  const user = await currentUser(request);
-  if (!user) return unauthorized();
-  if (!hasPermission(user.permissions, 'project_member.manage')) return forbidden();
-
-  try {
-    const payload = memberSchema.parse(await request.json());
-    const member = await addProjectMember(params.projectId, payload);
-
-    if (!member) {
-      return NextResponse.json({ ok: false, error: { code: 'not_found', message: 'Project not found' } }, { status: 404 });
-    }
-
-    return NextResponse.json({ ok: true, member }, { status: 201 });
-  } catch {
-    return NextResponse.json({ ok: false, error: { code: 'invalid_request', message: 'Unable to add project member' } }, { status: 400 });
-  }
-}
+export async function DELETE(request: NextRequest, { params }: { params: { projectId: string; memberId: string } }) { const user = await currentUser(request); if (!user) return unauthorized(); if (!hasPermission(user.permissions, 'project_member.manage')) return forbidden(); if (!await getProjectById(params.projectId)) return NextResponse.json({ ok: false, error: { code: 'not_found', message: 'Project not found' } }, { status: 404 }); const member = await removeProjectMember(params.projectId, params.memberId); return member ? NextResponse.json({ ok: true, member }) : NextResponse.json({ ok: false, error: { code: 'not_found', message: 'Member not found' } }, { status: 404 }); }
