@@ -1,20 +1,11 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+export type Permission = string;
 
-:root {
-  color-scheme: dark;
-}
+export const RBAC = {
+  projectRead: 'project.read',
+  projectWrite: 'project.write',
+  projectMemberManage: 'project_member.manage'
+} as const;
 
-html,
-body {
-  margin: 0;
-  min-height: 100%;
-  background: #020817;
-  color: #e2e8f0;
-  font-family: Arial, Helvetica, sans-serif;
-}
-
-* {
-  box-sizing: border-box;
+export function hasPermission(grantedPermissions: Permission[], permission: Permission): boolean {
+  return grantedPermissions.includes(permission) || grantedPermissions.includes('*');
 }
