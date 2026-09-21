@@ -1,9 +1,13 @@
+import { mkdir, readFile, writeFile } from 'node:fs/promises';
+import path from 'node:path';
+
 export type ProjectStatus = 'active' | 'planning' | 'on_hold' | 'complete';
+export type ProjectRole = 'exec_admin' | 'project_manager' | 'field_staff';
 
 export type ProjectMember = {
   id: string;
   name: string;
-  role: 'exec_admin' | 'project_manager' | 'field_staff';
+  role: ProjectRole;
 };
 
 export type ProjectRecord = {
@@ -15,8 +19,12 @@ export type ProjectRecord = {
   members: ProjectMember[];
 };
 
-const PROJECT_CATALOG: Record<string, ProjectRecord> = {
-  'alpha-tower': {
+export type ProjectListItem = ProjectRecord & {
+  statusLabel: string;
+};
+
+const DEFAULT_PROJECTS: ProjectRecord[] = [
+  {
     id: 'alpha-tower',
     name: 'Alpha Tower',
     code: 'AT-101',
@@ -28,7 +36,7 @@ const PROJECT_CATALOG: Record<string, ProjectRecord> = {
       { id: 'jenna-patel', name: 'Jenna Patel', role: 'exec_admin' }
     ]
   },
-  'northline-logistics': {
+  {
     id: 'northline-logistics',
     name: 'Northline Logistics',
     code: 'NL-220',
@@ -39,7 +47,7 @@ const PROJECT_CATALOG: Record<string, ProjectRecord> = {
       { id: 'rafael-chen', name: 'Rafael Chen', role: 'field_staff' }
     ]
   },
-  'harbor-suites': {
+  {
     id: 'harbor-suites',
     name: 'Harbor Suites',
     code: 'HS-310',
@@ -51,23 +59,63 @@ const PROJECT_CATALOG: Record<string, ProjectRecord> = {
       { id: 'leah-flores', name: 'Leah Flores', role: 'project_manager' }
     ]
   }
-};
+];
 
-export function getProjectList() {
-  return Object.values(PROJECT_CATALOG).map((project) => ({
+const STORE_DIR = path.join(process.cwd(), '.data');
+const STORE_FILE = path.join(STORE_DIR, 'projects.json');
+
+function slugify(value: string) {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '');
+}
+
+async function readProjectsFromDisk(): Promise<ProjectRecord[]> {
+  try {
+    const data = await readFile(STORE_FILE, 'utf8');
+    const parsed = JSON.parse(data) as ProjectRecord[];
+    if (Array.isArray(parsed) && parsed.length > 0) {
+      return parsed;
+    }
+  } catch {
+    // ignore missing or invalid store and fall back to defaults
+  }
+
+  await mkdir(STORE_DIR, { recursive: true });
+  await writeFile(STORE_FILE, JSON.stringify(DEFAULT_PROJECTS, null, 2), 'utf8');
+  return DEFAULT_PROJECTS;
+}
+
+async function writeProjectsToDisk(projects: ProjectRecord[]) {
+  try {
+    await mkdir(STORE_DIR, { recursive: true });
+    await writeFile(STORE_FILE, JSON.stringify(projects, null, 2), 'utf8');
+  } catch {
+    // ignore disk failures in this lightweight foundation layer
+  }
+}
+
+export async function getProjectList(): Promise<ProjectListItem[]> {
+  const projects = await readProjectsFromDisk();
+  return projects.map((project) => ({
     ...project,
     statusLabel: project.status.replace('_', ' ')
   }));
 }
 
-export function getProjectById(projectId: string) {
-  return PROJECT_CATALOG[projectId] ?? null;
+export async function getProjectById(projectId: string): Promise<ProjectRecord | null> {
+  const projects = await readProjectsFromDisk();
+  return projects.find((project) => project.id === projectId) ?? null;
 }
 
-export function createProject(input: { name: string; code: string; status?: ProjectStatus }) {
-  const id = input.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+export async function createProject(input: { name: string; code: string; status?: ProjectStatus }): Promise<ProjectRecord> {
+  const projects = await readProjectsFromDisk();
+  const projectId = slugify(input.name) || `project-${projects.length + 1}`;
+
   const record: ProjectRecord = {
-    id,
+    id: projectId,
     name: input.name,
     code: input.code,
     status: input.status ?? 'planning',
@@ -75,37 +123,66 @@ export function createProject(input: { name: string; code: string; status?: Proj
     members: []
   };
 
-  PROJECT_CATALOG[id] = record;
+  projects.push(record);
+  await writeProjectsToDisk(projects);
   return record;
 }
 
-export function updateProject(projectId: string, updates: Partial<Pick<ProjectRecord, 'name' | 'code' | 'status'>>) {
-  const project = PROJECT_CATALOG[projectId];
-  if (!project) return null;
+export async function updateProject(
+  projectId: string,
+  updates: Partial<Pick<ProjectRecord, 'name' | 'code' | 'status' | 'summary'>>
+): Promise<ProjectRecord | null> {
+  const projects = await readProjectsFromDisk();
+  const index = projects.findIndex((project) => project.id === projectId);
+  if (index === -1) return null;
 
-  const nextProject = { ...project, ...updates };
-  PROJECT_CATALOG[projectId] = nextProject;
+  const nextProject = { ...projects[index], ...updates };
+  projects[index] = nextProject;
+  await writeProjectsToDisk(projects);
   return nextProject;
 }
 
-export function addProjectMember(projectId: string, member: Pick<ProjectMember, 'name' | 'role'>) {
-  const project = PROJECT_CATALOG[projectId];
+export async function deleteProject(projectId: string): Promise<ProjectRecord | null> {
+  const projects = await readProjectsFromDisk();
+  const index = projects.findIndex((project) => project.id === projectId);
+  if (index === -1) return null;
+
+  const [removed] = projects.splice(index, 1);
+  await writeProjectsToDisk(projects);
+  return removed;
+}
+
+export async function addProjectMember(
+  projectId: string,
+  member: Pick<ProjectMember, 'name' | 'role'>
+): Promise<ProjectMember | null> {
+  const projects = await readProjectsFromDisk();
+  const project = projects.find((item) => item.id === projectId);
   if (!project) return null;
 
   const record: ProjectMember = {
-    id: member.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, ''),
+    id: slugify(member.name) || `member-${project.members.length + 1}`,
     ...member
   };
 
   project.members.push(record);
+  await writeProjectsToDisk(projects);
   return record;
 }
 
-export function removeProjectMember(projectId: string, memberId: string) {
-  const project = PROJECT_CATALOG[projectId];
+export async function removeProjectMember(projectId: string, memberId: string): Promise<ProjectMember | null> {
+  const projects = await readProjectsFromDisk();
+  const project = projects.find((item) => item.id === projectId);
   if (!project) return null;
 
-  const member = project.members.find((item) => item.id === memberId);
-  project.members = project.members.filter((item) => item.id !== memberId);
-  return member ?? null;
+  const index = project.members.findIndex((member) => member.id === memberId);
+  if (index === -1) return null;
+
+  const [removed] = project.members.splice(index, 1);
+  await writeProjectsToDisk(projects);
+  return removed;
+}
+
+export function projectStatusLabel(status: ProjectStatus) {
+  return status.replace('_', ' ');
 }

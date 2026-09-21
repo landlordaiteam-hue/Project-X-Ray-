@@ -5,7 +5,7 @@ export async function GET(
   _request: NextRequest,
   { params }: { params: { projectId: string } }
 ) {
-  const project = getProjectById(params.projectId);
+  const project = await getProjectById(params.projectId);
 
   if (!project) {
     return NextResponse.json({ ok: false, error: { code: 'not_found', message: 'Project not found' } }, { status: 404 });
@@ -17,7 +17,7 @@ export async function GET(
 export async function PATCH(request: NextRequest, { params }: { params: { projectId: string } }) {
   try {
     const body = await request.json();
-    const project = updateProject(params.projectId, {
+    const project = await updateProject(params.projectId, {
       name: body.name,
       code: body.code,
       status: body.status,
@@ -35,7 +35,7 @@ export async function PATCH(request: NextRequest, { params }: { params: { projec
 }
 
 export async function DELETE(_request: NextRequest, { params }: { params: { projectId: string } }) {
-  const removed = deleteProject(params.projectId);
+  const removed = await deleteProject(params.projectId);
 
   if (!removed) {
     return NextResponse.json({ ok: false, error: { code: 'not_found', message: 'Project not found' } }, { status: 404 });

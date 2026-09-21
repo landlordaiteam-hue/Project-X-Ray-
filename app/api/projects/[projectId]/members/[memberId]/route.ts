@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { addProjectMember, getProjectById } from '@/lib/project-data';
 
 export async function GET(_request: NextRequest, { params }: { params: { projectId: string } }) {
-  const project = getProjectById(params.projectId);
+  const project = await getProjectById(params.projectId);
 
   if (!project) {
     return NextResponse.json({ ok: false, error: { code: 'not_found', message: 'Project not found' } }, { status: 404 });
@@ -16,10 +16,13 @@ export async function POST(request: NextRequest, { params }: { params: { project
     const body = await request.json();
 
     if (!body.name || !body.role) {
-      return NextResponse.json({ ok: false, error: { code: 'invalid_request', message: 'Name and role are required' } }, { status: 400 });
+      return NextResponse.json(
+        { ok: false, error: { code: 'invalid_request', message: 'Name and role are required' } },
+        { status: 400 }
+      );
     }
 
-    const member = addProjectMember(params.projectId, {
+    const member = await addProjectMember(params.projectId, {
       name: body.name,
       role: body.role
     });

@@ -1,8 +1,8 @@
 import Link from 'next/link';
 import { getProjectList } from '@/lib/project-data';
 
-export default function HomePage() {
-  const projects = getProjectList();
+export default async function HomePage() {
+  const projects = await getProjectList();
 
   return (
     <main className="min-h-screen bg-slate-950 text-slate-100">
