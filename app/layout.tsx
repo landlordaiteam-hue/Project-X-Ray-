@@ -1,14 +1,16 @@
-import './globals.css';
+import { NextRequest, NextResponse } from 'next/server';
+import { removeProjectMember, getProjectById } from '@/lib/project-data';
 
-export const metadata = {
-  title: 'Capital X-RAY',
-  description: 'Project workspace foundation'
-};
+export async function DELETE(_request: NextRequest, { params }: { params: { projectId: string; memberId: string } }) {
+  const project = getProjectById(params.projectId);
+  if (!project) {
+    return NextResponse.json({ ok: false, error: { code: 'not_found', message: 'Project not found' } }, { status: 404 });
+  }
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <html lang="en">
-      <body className="bg-slate-950 text-slate-100 antialiased">{children}</body>
-    </html>
-  );
+  const member = removeProjectMember(params.projectId, params.memberId);
+  if (!member) {
+    return NextResponse.json({ ok: false, error: { code: 'not_found', message: 'Member not found' } }, { status: 404 });
+  }
+
+  return NextResponse.json({ ok: true, member });
 }

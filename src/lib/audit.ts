@@ -1,5 +1,39 @@
-export type AuditEntry = Record<string, unknown>;
+import { NextResponse } from 'next/server';
 
-export async function logAudit(entry: AuditEntry) {
-  return entry;
+export type AuthUser = {
+  sub: string;
+  organizationId: string;
+  permissions: string[];
+  roles: string[];
+};
+
+export async function currentUser(request: Request | { headers?: Headers }): Promise<AuthUser | null> {
+  const headers = request instanceof Request ? request.headers : new Headers(request.headers ?? {});
+
+  const userIdHeader = headers.get('x-user-id');
+  const authorizationHeader = headers.get('authorization');
+
+  if (!userIdHeader && !authorizationHeader) {
+    return null;
+  }
+
+  const userId = userIdHeader ?? 'demo-user';
+  const organizationId = headers.get('x-organization-id') ?? 'demo-organization';
+  const permissions = headers.get('x-permissions')?.split(',').filter(Boolean) ?? ['project.read'];
+  const roles = headers.get('x-roles')?.split(',').filter(Boolean) ?? ['project_manager'];
+
+  return {
+    sub: userId,
+    organizationId,
+    permissions,
+    roles
+  };
+}
+
+export function unauthorized() {
+  return NextResponse.json({ ok: false, error: { code: 'unauthorized', message: 'Unauthorized' } }, { status: 401 });
+}
+
+export function forbidden() {
+  return NextResponse.json({ ok: false, error: { code: 'forbidden', message: 'Forbidden' } }, { status: 403 });
 }

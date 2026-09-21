@@ -1,5 +1,20 @@
-export type Permission = string;
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-export function hasPermission(grantedPermissions: Permission[], permission: Permission): boolean {
-  return grantedPermissions.includes(permission) || grantedPermissions.includes('*');
+:root {
+  color-scheme: dark;
+}
+
+html,
+body {
+  margin: 0;
+  min-height: 100%;
+  background: #020817;
+  color: #e2e8f0;
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+* {
+  box-sizing: border-box;
 }

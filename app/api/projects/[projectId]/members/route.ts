@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getProjectById, addProjectMember, removeProjectMember } from '@/lib/project-data';
+import { deleteProject, getProjectById, updateProject } from '@/lib/project-data';
 
 export async function GET(
   _request: NextRequest,
@@ -8,38 +8,38 @@ export async function GET(
   const project = getProjectById(params.projectId);
 
   if (!project) {
-    return NextResponse.json(
-      { ok: false, error: { code: 'not_found', message: 'Project not found' } },
-      { status: 404 }
-    );
+    return NextResponse.json({ ok: false, error: { code: 'not_found', message: 'Project not found' } }, { status: 404 });
   }
 
-  return NextResponse.json({ ok: true, members: project.members });
+  return NextResponse.json({ ok: true, project });
 }
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: { projectId: string } }
-) {
+export async function PATCH(request: NextRequest, { params }: { params: { projectId: string } }) {
   try {
     const body = await request.json();
-    const member = addProjectMember(params.projectId, {
+    const project = updateProject(params.projectId, {
       name: body.name,
-      role: body.role ?? 'field_staff'
+      code: body.code,
+      status: body.status,
+      summary: body.summary
     });
 
-    if (!member) {
-      return NextResponse.json(
-        { ok: false, error: { code: 'not_found', message: 'Project not found' } },
-        { status: 404 }
-      );
+    if (!project) {
+      return NextResponse.json({ ok: false, error: { code: 'not_found', message: 'Project not found' } }, { status: 404 });
     }
 
-    return NextResponse.json({ ok: true, member }, { status: 201 });
+    return NextResponse.json({ ok: true, project });
   } catch {
-    return NextResponse.json(
-      { ok: false, error: { code: 'invalid_request', message: 'Unable to add member' } },
-      { status: 400 }
-    );
+    return NextResponse.json({ ok: false, error: { code: 'invalid_request', message: 'Unable to update project' } }, { status: 400 });
   }
+}
+
+export async function DELETE(_request: NextRequest, { params }: { params: { projectId: string } }) {
+  const removed = deleteProject(params.projectId);
+
+  if (!removed) {
+    return NextResponse.json({ ok: false, error: { code: 'not_found', message: 'Project not found' } }, { status: 404 });
+  }
+
+  return NextResponse.json({ ok: true, project: removed });
 }

@@ -1,37 +1,133 @@
-import Link from 'next/link';
-import { getProjectList } from '@/lib/project-data';
+export type ProjectStatus = 'active' | 'planning' | 'on_hold' | 'complete';
 
-export default function HomePage() {
-  const projects = getProjectList();
+export type ProjectMember = {
+  id: string;
+  name: string;
+  role: 'exec_admin' | 'project_manager' | 'field_staff';
+};
 
-  return (
-    <main className="min-h-screen bg-slate-950 text-slate-100">
-      <div className="mx-auto max-w-6xl px-6 py-12">
-        <div className="mb-8 flex items-center justify-between gap-4">
-          <div>
-            <p className="text-sm uppercase tracking-[0.25em] text-blue-300">Capital X-RAY</p>
-            <h1 className="mt-3 text-4xl font-bold">Operations workspace</h1>
-          </div>
-          <button className="rounded-md bg-blue-600 px-4 py-2 text-sm font-medium text-white transition hover:bg-blue-500">
-            New project
-          </button>
-        </div>
+export type ProjectRecord = {
+  id: string;
+  name: string;
+  code: string;
+  status: ProjectStatus;
+  summary: string;
+  members: ProjectMember[];
+};
 
-        <div className="grid gap-6 md:grid-cols-3">
-          {projects.map((project) => (
-            <Link
-              key={project.id}
-              href={`/project/${project.id}`}
-              className="rounded-xl border border-slate-800 bg-slate-900 p-5 shadow-lg shadow-slate-950/30 transition hover:border-blue-600 hover:bg-slate-800"
-            >
-              <p className="text-sm uppercase tracking-[0.2em] text-slate-400">{project.code}</p>
-              <h2 className="mt-3 text-2xl font-semibold">{project.name}</h2>
-              <p className="mt-2 text-sm text-slate-300">{project.summary}</p>
-              <p className="mt-4 text-sm text-slate-300">Status: {project.statusLabel}</p>
-            </Link>
-          ))}
-        </div>
-      </div>
-    </main>
-  );
+export type ProjectListItem = ProjectRecord & {
+  statusLabel: string;
+};
+
+const PROJECT_CATALOG: Record<string, ProjectRecord> = {
+  'alpha-tower': {
+    id: 'alpha-tower',
+    name: 'Alpha Tower',
+    code: 'AT-101',
+    status: 'active',
+    summary: 'Core commercial tower rebuild and tenant-fit out coordination.',
+    members: [
+      { id: 'alicia-stone', name: 'Alicia Stone', role: 'project_manager' },
+      { id: 'marcus-hall', name: 'Marcus Hall', role: 'field_staff' },
+      { id: 'jenna-patel', name: 'Jenna Patel', role: 'exec_admin' }
+    ]
+  },
+  'northline-logistics': {
+    id: 'northline-logistics',
+    name: 'Northline Logistics',
+    code: 'NL-220',
+    status: 'planning',
+    summary: 'Regional distribution center expansion and staging plan.',
+    members: [
+      { id: 'nia-brooks', name: 'Nia Brooks', role: 'project_manager' },
+      { id: 'rafael-chen', name: 'Rafael Chen', role: 'field_staff' }
+    ]
+  },
+  'harbor-suites': {
+    id: 'harbor-suites',
+    name: 'Harbor Suites',
+    code: 'HS-310',
+    status: 'on_hold',
+    summary: 'Hotel conversion and waterfront amenities rework.',
+    members: [
+      { id: 'priya-shah', name: 'Priya Shah', role: 'exec_admin' },
+      { id: 'omar-grant', name: 'Omar Grant', role: 'field_staff' },
+      { id: 'leah-flores', name: 'Leah Flores', role: 'project_manager' }
+    ]
+  }
+};
+
+export function slugify(value: string) {
+  return value
+    .toLowerCase()
+    .trim()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '');
+}
+
+export function getProjectList(): ProjectListItem[] {
+  return Object.values(PROJECT_CATALOG).map((project) => ({
+    ...project,
+    statusLabel: project.status.replace('_', ' ')
+  }));
+}
+
+export function getProjectById(projectId: string): ProjectRecord | null {
+  return PROJECT_CATALOG[projectId] ?? null;
+}
+
+export function createProject(input: { name: string; code: string; status?: ProjectStatus }): ProjectRecord {
+  const id = slugify(input.name);
+  const project: ProjectRecord = {
+    id,
+    name: input.name,
+    code: input.code,
+    status: input.status ?? 'planning',
+    summary: 'New project created from the workspace foundation.',
+    members: []
+  };
+
+  PROJECT_CATALOG[id] = project;
+  return project;
+}
+
+export function updateProject(
+  projectId: string,
+  updates: Partial<Pick<ProjectRecord, 'name' | 'code' | 'status' | 'summary'>>
+): ProjectRecord | null {
+  const current = PROJECT_CATALOG[projectId];
+  if (!current) return null;
+
+  const next = { ...current, ...updates };
+  PROJECT_CATALOG[projectId] = next;
+  return next;
+}
+
+export function deleteProject(projectId: string): ProjectRecord | null {
+  const current = PROJECT_CATALOG[projectId];
+  if (!current) return null;
+  delete PROJECT_CATALOG[projectId];
+  return current;
+}
+
+export function addProjectMember(projectId: string, member: Pick<ProjectMember, 'name' | 'role'>): ProjectMember | null {
+  const project = PROJECT_CATALOG[projectId];
+  if (!project) return null;
+
+  const record: ProjectMember = {
+    id: slugify(member.name),
+    ...member
+  };
+
+  project.members.push(record);
+  return record;
+}
+
+export function removeProjectMember(projectId: string, memberId: string): ProjectMember | null {
+  const project = PROJECT_CATALOG[projectId];
+  if (!project) return null;
+
+  const member = project.members.find((item) => item.id === memberId) ?? null;
+  project.members = project.members.filter((item) => item.id !== memberId);
+  return member;
 }

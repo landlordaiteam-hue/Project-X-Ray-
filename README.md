@@ -4,24 +4,32 @@ Master engineering and product specification for Capital X-RAY Construction OS, 
 
 ## Phase 2 workspace foundation
 
-This branch establishes the initial project workspace foundation for the Capital X-RAY operations workspace, including:
-- a Next.js application shell
-- configurable Tailwind styling
-- basic project workspace access helpers
-- an initial RBAC test suite
+This branch establishes the workspace foundation for the Capital X-RAY operations platform.
 
-## Getting started
+### Included
+
+- a valid Next.js App Router shell
+- a project dashboard and detail view
+- project CRUD and member management API routes
+- a shared project data source for UI and API consistency
+- RBAC and auth helper scaffolding
+
+### Starting locally
 
 ```bash
 npm install
 npm run dev
 ```
 
-## Scripts
+### Useful scripts
 
 ```bash
 npm run build
 npm run test
 npm run lint
-npm run db:migrate
 ```
+
+### Notes
+
+The project currently uses a lightweight in-memory data source to keep the foundation stable while the full database-backed implementation is added.
+
