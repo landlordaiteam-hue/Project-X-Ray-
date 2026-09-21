@@ -1,12 +1,27 @@
-import { describe, expect, it } from 'vitest';
-import { hasPermission } from './rbac';
+# Project-X-Ray-
 
-describe('project workspace access', () => {
-  it('allows project managers to manage members', () => {
-    expect(hasPermission(['project.read', 'project_member.manage'], 'project_member.manage')).toBe(true);
-  });
+Master engineering and product specification for Capital X-RAY Construction OS, defining the architecture, workflows, financial systems, safety, procurement, Xena intelligence, functional X-RAY agents, integrations, security, and implementation roadmap.
 
-  it('prevents field staff from managing members', () => {
-    expect(hasPermission(['project.read'], 'project_member.manage')).toBe(false);
-  });
-});
+## Phase 2 workspace foundation
+
+This branch establishes the initial project workspace foundation for the Capital X-RAY operations workspace, including:
+- a Next.js application shell
+- configurable Tailwind styling
+- basic project workspace access helpers
+- an initial RBAC test suite
+
+## Getting started
+
+```bash
+npm install
+npm run dev
+```
+
+## Scripts
+
+```bash
+npm run build
+npm run test
+npm run lint
+npm run db:migrate
+```
