@@ -1,6 +1,6 @@
-# Production persistence
+# PostgreSQL persistence
 
-When `DATABASE_URL` and `DEFAULT_ORGANIZATION_ID` are configured, project and member operations use PostgreSQL with organization-scoped row-level security. Without those variables, local development uses the deterministic in-memory seed data.
+The migration runner now discovers and applies every numbered SQL migration in order, records applied migrations, and skips migrations already applied.
 
 ```bash
 export DATABASE_URL=postgresql://...
@@ -9,3 +9,5 @@ npm run db:migrate
 npm run build
 npm run test
 ```
+
+The project service retains an in-memory fallback when database configuration is absent. For production, pass the authenticated organization ID into tenant-scoped repository calls and use `withTenant` for every database transaction.
