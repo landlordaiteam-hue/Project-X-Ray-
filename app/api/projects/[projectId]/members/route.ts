@@ -2,16 +2,12 @@ import { NextRequest, NextResponse } from 'next/server';
 import { z } from 'zod';
 import { currentUser, forbidden, unauthorized } from '@/lib/request-auth';
 import { hasPermission } from '@/lib/rbac';
-import { deleteProject, getProjectById, updateProject } from '@/lib/project-data';
+import { addProjectMember, getProjectById } from '@/lib/project-data';
 
-const patchSchema = z
-  .object({
-    name: z.string().trim().min(2).max(120).optional(),
-    code: z.string().trim().min(2).max(32).optional(),
-    status: z.enum(['planning', 'active', 'on_hold', 'complete']).optional(),
-    summary: z.string().trim().min(2).max(240).optional()
-  })
-  .refine((value) => Object.keys(value).length > 0, { message: 'At least one field is required' });
+const memberSchema = z.object({
+  name: z.string().trim().min(2).max(120),
+  role: z.enum(['exec_admin', 'project_manager', 'field_staff'])
+});
 
 export async function GET(request: NextRequest, { params }: { params: { projectId: string } }) {
   const user = await currentUser(request);
@@ -23,39 +19,26 @@ export async function GET(request: NextRequest, { params }: { params: { projectI
     return NextResponse.json({ ok: false, error: { code: 'not_found', message: 'Project not found' } }, { status: 404 });
   }
 
-  return NextResponse.json({ ok: true, project });
+  return NextResponse.json({ ok: true, members: project.members });
 }
 
-export async function PATCH(request: NextRequest, { params }: { params: { projectId: string } }) {
+export async function POST(request: NextRequest, { params }: { params: { projectId: string } }) {
   const user = await currentUser(request);
   if (!user) return unauthorized();
-  if (!hasPermission(user.permissions, 'project.write')) return forbidden();
+  if (!hasPermission(user.permissions, 'project_member.manage')) return forbidden();
 
   try {
-    const payload = patchSchema.parse(await request.json());
-    const project = await updateProject(params.projectId, payload);
-    if (!project) {
+    const payload = memberSchema.parse(await request.json());
+    const member = await addProjectMember(params.projectId, payload);
+    if (!member) {
       return NextResponse.json({ ok: false, error: { code: 'not_found', message: 'Project not found' } }, { status: 404 });
     }
 
-    return NextResponse.json({ ok: true, project });
+    return NextResponse.json({ ok: true, member }, { status: 201 });
   } catch {
     return NextResponse.json(
-      { ok: false, error: { code: 'invalid_request', message: 'Unable to update project' } },
+      { ok: false, error: { code: 'invalid_request', message: 'Unable to add project member' } },
       { status: 400 }
     );
   }
-}
-
-export async function DELETE(request: NextRequest, { params }: { params: { projectId: string } }) {
-  const user = await currentUser(request);
-  if (!user) return unauthorized();
-  if (!hasPermission(user.permissions, 'project.write')) return forbidden();
-
-  const project = await deleteProject(params.projectId);
-  if (!project) {
-    return NextResponse.json({ ok: false, error: { code: 'not_found', message: 'Project not found' } }, { status: 404 });
-  }
-
-  return NextResponse.json({ ok: true, project });
 }
