@@ -3,11 +3,15 @@ export type QueryResult<T> = {
   rowCount: number;
 };
 
+export function createQueryResult<T>(rows: T[]): QueryResult<T> {
+  return { rows, rowCount: rows.length };
+}
+
 export async function runQuery<T>(
   _query: string,
   _params: unknown[] = []
 ): Promise<QueryResult<T>> {
-  return { rows: [], rowCount: 0 };
+  return createQueryResult<T>([]);
 }
 
 export async function withTenant<T>(
@@ -17,7 +21,7 @@ export async function withTenant<T>(
   }) => Promise<T>
 ): Promise<T> {
   const client = {
-    query: async <R = unknown>() => ({ rows: [] as R[], rowCount: 0 })
+    query: async <R = unknown>(_sql: string, _params?: unknown[]) => createQueryResult<R>([])
   };
 
   return callback(client);
