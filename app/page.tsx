@@ -1,12 +1,9 @@
 import Link from 'next/link';
-
-const projects = [
-  { name: 'Alpha Tower', code: 'AT-101', status: 'Active', href: '/project/alpha-tower' },
-  { name: 'Northline Logistics', code: 'NL-220', status: 'Planning', href: '/project/northline-logistics' },
-  { name: 'Harbor Suites', code: 'HS-310', status: 'On hold', href: '/project/harbor-suites' }
-];
+import { getProjectList } from '@/lib/project-data';
 
 export default function HomePage() {
+  const projects = getProjectList();
+
   return (
     <main className="min-h-screen bg-slate-950 text-slate-100">
       <div className="mx-auto max-w-6xl px-6 py-12">
@@ -23,13 +20,14 @@ export default function HomePage() {
         <div className="grid gap-6 md:grid-cols-3">
           {projects.map((project) => (
             <Link
-              key={project.name}
-              href={project.href}
+              key={project.id}
+              href={`/project/${project.id}`}
               className="rounded-xl border border-slate-800 bg-slate-900 p-5 shadow-lg shadow-slate-950/30 transition hover:border-blue-600 hover:bg-slate-800"
             >
               <p className="text-sm uppercase tracking-[0.2em] text-slate-400">{project.code}</p>
               <h2 className="mt-3 text-2xl font-semibold">{project.name}</h2>
-              <p className="mt-4 text-sm text-slate-300">Status: {project.status}</p>
+              <p className="mt-2 text-sm text-slate-300">{project.summary}</p>
+              <p className="mt-4 text-sm text-slate-300">Status: {project.statusLabel}</p>
             </Link>
           ))}
         </div>
