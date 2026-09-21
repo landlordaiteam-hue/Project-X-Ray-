@@ -9,7 +9,6 @@ export type AuthUser = {
 
 export async function currentUser(request: Request | { headers?: Headers }): Promise<AuthUser | null> {
   const headers = request instanceof Request ? request.headers : new Headers(request.headers ?? {});
-
   const userId = headers.get('x-user-id');
   const authHeader = headers.get('authorization');
 

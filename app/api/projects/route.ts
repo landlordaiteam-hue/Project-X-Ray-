@@ -120,7 +120,11 @@ async function listProjectsFromDb(): Promise<ProjectRecord[]> {
     };
 
     if (row.member_id && row.member_name && row.member_role) {
-      project.members.push({ id: row.member_id, name: row.member_name, role: row.member_role });
+      project.members.push({
+        id: row.member_id,
+        name: row.member_name,
+        role: row.member_role
+      });
     }
 
     byId.set(row.slug, project);
@@ -131,10 +135,7 @@ async function listProjectsFromDb(): Promise<ProjectRecord[]> {
 
 export async function getProjectList(): Promise<ProjectListItem[]> {
   const projects = useMemoryFallback() ? MEMORY_PROJECTS : await listProjectsFromDb();
-  return projects.map((project) => ({
-    ...project,
-    statusLabel: project.status.replace('_', ' ')
-  }));
+  return projects.map((project) => ({ ...project, statusLabel: project.status.replace('_', ' ') }));
 }
 
 export async function getProjectById(projectId: string): Promise<ProjectRecord | null> {
@@ -164,7 +165,7 @@ export async function createProject(input: { name: string; code: string; status?
   const orgId = requireOrganizationId();
   await withTenant(orgId, async (client) => {
     await client.query(
-      'INSERT INTO projects (organization_id, slug, name, code, status, summary) VALUES (current_setting(\'app.current_organization_id\')::uuid, $1, $2, $3, $4, $5)',
+      "INSERT INTO projects (organization_id, slug, name, code, status, summary) VALUES (current_setting('app.current_organization_id')::uuid, $1, $2, $3, $4, $5)",
       [projectId, input.name, input.code, record.status, record.summary]
     );
   });
@@ -189,7 +190,7 @@ export async function updateProject(
   const orgId = requireOrganizationId();
   await withTenant(orgId, (client) =>
     client.query(
-      'UPDATE projects SET name = COALESCE($1, name), code = COALESCE($2, code), status = COALESCE($3, status), summary = COALESCE($4, summary), updated_at = NOW() WHERE slug = $5 AND organization_id = current_setting(\'app.current_organization_id\')::uuid',
+      "UPDATE projects SET name = COALESCE($1, name), code = COALESCE($2, code), status = COALESCE($3, status), summary = COALESCE($4, summary), updated_at = NOW() WHERE slug = $5 AND organization_id = current_setting('app.current_organization_id')::uuid",
       [updates.name ?? null, updates.code ?? null, updates.status ?? null, updates.summary ?? null, projectId]
     )
   );
@@ -209,7 +210,7 @@ export async function deleteProject(projectId: string): Promise<ProjectRecord | 
 
   const orgId = requireOrganizationId();
   await withTenant(orgId, (client) =>
-    client.query('DELETE FROM projects WHERE slug = $1 AND organization_id = current_setting(\'app.current_organization_id\')::uuid', [projectId])
+    client.query("DELETE FROM projects WHERE slug = $1 AND organization_id = current_setting('app.current_organization_id')::uuid", [projectId])
   );
 
   return current;
@@ -238,7 +239,7 @@ export async function addProjectMember(
   const orgId = requireOrganizationId();
   const result = await withTenant(orgId, (client) =>
     client.query<{ id: string }>(
-      'INSERT INTO project_members (organization_id, project_id, name, role) SELECT current_setting(\'app.current_organization_id\')::uuid, id, $1, $2 FROM projects WHERE slug = $3 AND organization_id = current_setting(\'app.current_organization_id\')::uuid RETURNING id::text',
+      "INSERT INTO project_members (organization_id, project_id, name, role) SELECT current_setting('app.current_organization_id')::uuid, id, $1, $2 FROM projects WHERE slug = $3 AND organization_id = current_setting('app.current_organization_id')::uuid RETURNING id::text",
       [member.name, member.role, projectId]
     )
   );
@@ -260,7 +261,7 @@ export async function removeProjectMember(projectId: string, memberId: string): 
 
   const orgId = requireOrganizationId();
   await withTenant(orgId, (client) =>
-    client.query('DELETE FROM project_members WHERE id = $1 AND organization_id = current_setting(\'app.current_organization_id\')::uuid', [memberId])
+    client.query("DELETE FROM project_members WHERE id = $1 AND organization_id = current_setting('app.current_organization_id')::uuid", [memberId])
   );
 
   return member;

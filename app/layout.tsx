@@ -1,3 +1,5 @@
+import './globals.css';
+
 export const metadata = {
   title: 'Capital X-RAY',
   description: 'Project workspace foundation'
